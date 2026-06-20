@@ -101,14 +101,52 @@
 
                     <div v-if="activeTab === 'send'" class="space-y-4">
                         <div class="grid lg:grid-cols-2 gap-4">
-                            <div>
+                            <div class="relative">
                                 <label class="glass-label">{{ $t("files.destination_hash") }}</label>
-                                <input
-                                    v-model="sendDestinationHash"
-                                    type="text"
-                                    placeholder="e.g. 7b746057a7294469799cd8d7d429676a"
-                                    class="input-field font-mono"
-                                />
+                                <div class="relative">
+                                    <input
+                                        v-model="sendDestinationHash"
+                                        type="text"
+                                        placeholder="e.g. 7b746057a7294469799cd8d7d429676a"
+                                        class="input-field font-mono pr-8"
+                                        @focus="showSendContactPicker = true; fetchContacts()"
+                                        @blur="setTimeout(() => showSendContactPicker = false, 200)"
+                                        @input="fetchContacts(sendDestinationHash)"
+                                    />
+                                    <MaterialDesignIcon
+                                        icon-name="account-multiple"
+                                        class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 cursor-pointer hover:text-indigo-500 transition-colors"
+                                        @mousedown.prevent="showSendContactPicker = !showSendContactPicker; if (showSendContactPicker) fetchContacts()"
+                                    />
+                                </div>
+                                <div
+                                    v-if="showSendContactPicker"
+                                    class="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
+                                >
+                                    <div
+                                        v-if="contacts.length === 0"
+                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3"
+                                    >
+                                        {{ $t("files.no_contacts_found") }}
+                                    </div>
+                                    <button
+                                        v-for="c in contacts"
+                                        :key="c.id || c.remote_identity_hash"
+                                        type="button"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition flex items-center gap-2 border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
+                                        @mousedown.prevent="selectSendContact(c)"
+                                    >
+                                        <MaterialDesignIcon icon-name="account-multiple" class="w-4 h-4 shrink-0 text-gray-400 dark:text-zinc-500" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="font-medium text-gray-800 dark:text-zinc-200 truncate">
+                                                {{ c.name || $t("files.unnamed_contact") }}
+                                            </div>
+                                            <div class="text-xs text-gray-500 dark:text-zinc-400 font-mono truncate">
+                                                {{ c.remote_identity_hash || c.lxmf_address || "" }}
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="glass-label">{{ $t("files.description") }}</label>
@@ -199,14 +237,52 @@
 
                     <div v-if="activeTab === 'receive'" class="space-y-4">
                         <div class="grid lg:grid-cols-2 gap-4">
-                            <div>
+                            <div class="relative">
                                 <label class="glass-label">{{ $t("files.peer_hash") }}</label>
-                                <input
-                                    v-model="fetchDestinationHash"
-                                    type="text"
-                                    placeholder="e.g. 7b746057a7294469799cd8d7d429676a"
-                                    class="input-field font-mono"
-                                />
+                                <div class="relative">
+                                    <input
+                                        v-model="fetchDestinationHash"
+                                        type="text"
+                                        placeholder="e.g. 7b746057a7294469799cd8d7d429676a"
+                                        class="input-field font-mono pr-8"
+                                        @focus="showFetchContactPicker = true; fetchContacts()"
+                                        @blur="setTimeout(() => showFetchContactPicker = false, 200)"
+                                        @input="fetchContacts(fetchDestinationHash)"
+                                    />
+                                    <MaterialDesignIcon
+                                        icon-name="account-multiple"
+                                        class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 cursor-pointer hover:text-indigo-500 transition-colors"
+                                        @mousedown.prevent="showFetchContactPicker = !showFetchContactPicker; if (showFetchContactPicker) fetchContacts()"
+                                    />
+                                </div>
+                                <div
+                                    v-if="showFetchContactPicker"
+                                    class="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
+                                >
+                                    <div
+                                        v-if="contacts.length === 0"
+                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3"
+                                    >
+                                        {{ $t("files.no_contacts_found") }}
+                                    </div>
+                                    <button
+                                        v-for="c in contacts"
+                                        :key="c.id || c.remote_identity_hash"
+                                        type="button"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition flex items-center gap-2 border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
+                                        @mousedown.prevent="selectFetchContact(c)"
+                                    >
+                                        <MaterialDesignIcon icon-name="account-multiple" class="w-4 h-4 shrink-0 text-gray-400 dark:text-zinc-500" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="font-medium text-gray-800 dark:text-zinc-200 truncate">
+                                                {{ c.name || $t("files.unnamed_contact") }}
+                                            </div>
+                                            <div class="text-xs text-gray-500 dark:text-zinc-400 font-mono truncate">
+                                                {{ c.remote_identity_hash || c.lxmf_address || "" }}
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="glass-label">{{ $t("files.remote_path") }}</label>
@@ -916,6 +992,10 @@ export default {
             serverInProgress: false,
             serverResult: null,
             tcpInterfaces: [],
+
+            contacts: [],
+            showSendContactPicker: false,
+            showFetchContactPicker: false,
         };
     },
     watch: {
@@ -1220,6 +1300,26 @@ export default {
             } catch (e) {
                 ToastUtils.error(e.response?.data?.message || this.$t("files.failed_to_delete"));
             }
+        },
+        async fetchContacts(search) {
+            try {
+                const params = { limit: 200 };
+                if (search) params.search = search;
+                const response = await window.api.get("/api/v1/telephone/contacts", { params });
+                this.contacts = response.data.contacts || [];
+            } catch {
+                this.contacts = [];
+            }
+        },
+        selectSendContact(c) {
+            const hash = c.remote_identity_hash || c.lxmf_address || "";
+            if (hash) this.sendDestinationHash = hash;
+            this.showSendContactPicker = false;
+        },
+        selectFetchContact(c) {
+            const hash = c.remote_identity_hash || c.lxmf_address || "";
+            if (hash) this.fetchDestinationHash = hash;
+            this.showFetchContactPicker = false;
         },
         async refreshInterfaces() {
             try {

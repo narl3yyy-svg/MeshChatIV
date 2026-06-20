@@ -1815,6 +1815,8 @@
         "restart_hint": "Restart MeshChat for the change to take effect.",
         "provide_peer_host": "Please enter the peer IP address or hostname",
         "provide_listen_ip": "Please enter the listen IP address",
+        "no_contacts_found": "No contacts found",
+        "unnamed_contact": "Unnamed Contact",
         "failed_to_connect": "Failed to add direct connection",
         "failed_to_start_server": "Failed to start server"
     },
