@@ -588,6 +588,9 @@ export default {
             this.onPeerClick({
                 display_name: existingConversation?.display_name ?? "Anonymous Peer",
                 custom_display_name: existingConversation?.custom_display_name ?? null,
+                contact_image: existingConversation?.contact_image ?? null,
+                lxmf_user_icon: existingConversation?.lxmf_user_icon ?? null,
+                is_contact: existingConversation?.is_contact ?? false,
                 destination_hash: destinationHash,
             });
         },
@@ -788,6 +791,7 @@ export default {
                         custom_display_name: conversation.custom_display_name ?? existingPeer.custom_display_name,
                         contact_image: conversation.contact_image ?? existingPeer.contact_image,
                         lxmf_user_icon: conversation.lxmf_user_icon ?? existingPeer.lxmf_user_icon,
+                        is_contact: conversation.is_contact ?? existingPeer.is_contact ?? false,
                         updated_at: conversation.updated_at ?? existingPeer.updated_at,
                         is_tracking: conversation.is_tracking ?? existingPeer.is_tracking,
                     };

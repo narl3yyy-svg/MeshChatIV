@@ -1054,8 +1054,9 @@
                                             <div
                                                 class="bg-pink-50/50 dark:bg-pink-900/10 p-3 rounded-2xl border border-pink-100 dark:border-pink-900/20 text-xs text-pink-800 dark:text-pink-300"
                                             >
-                                                ⓘ Auto Interface auto-discovers peers on connected networks via IPv6
-                                                multicast.
+                                                ⓘ Auto Interface auto-discovers peers on connected networks via multicast.
+                                                Works with both IPv4 and IPv6. On IPv4-only networks (e.g. VPNs), it
+                                                uses IPv4 multicast automatically.
                                             </div>
                                             <div>
                                                 <FormLabel class="glass-label">Group ID (optional)</FormLabel>

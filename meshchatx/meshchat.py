@@ -11057,11 +11057,20 @@ class ReticulumMeshChat:
             if not field or field.name != "file":
                 return web.json_response({"message": "No file field in upload"}, status=400)
             filename = field.filename or "uploaded.bin"
-            data = await field.read()
-            if not data:
-                return web.json_response({"message": "Empty file"}, status=400)
-            dest_path = self.rns_fileshare_handler.upload_to_shared(filename, data)
-            return web.json_response({"path": dest_path, "message": "File uploaded to shared directory"})
+            tmp = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                while True:
+                    chunk = await field.read_chunk()
+                    if not chunk:
+                        break
+                    tmp.write(chunk)
+                tmp.close()
+                dest_path = self.rns_fileshare_handler.move_to_shared(filename, tmp.name)
+                return web.json_response({"path": dest_path, "message": "File uploaded to shared directory"})
+            except Exception as e:
+                if os.path.isfile(tmp.name):
+                    os.unlink(tmp.name)
+                return web.json_response({"message": str(e)}, status=500)
 
         @routes.post("/api/v1/rns-fileshare/files/copy-to-shared")
         async def rns_fileshare_copy_to_shared(request):
@@ -14619,8 +14628,8 @@ class ReticulumMeshChat:
 
         # create and run web app
         app = web.Application(
-            client_max_size=1024 * 1024 * 256,
-        )  # allow large message exports with embedded attachments
+            client_max_size=1024 * 1024 * 1024 * 2,
+        )  # 2 GB limit for file uploads and message exports
 
         # setup session storage
         # aiohttp_session.setup must be called before other middlewares that use sessions

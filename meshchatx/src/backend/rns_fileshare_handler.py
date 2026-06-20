@@ -633,13 +633,21 @@ class RNSFileShareHandler:
                     })
         return sorted(files, key=lambda x: x["name"])
 
-    def upload_to_shared(self, filename: str, data: bytes) -> str:
-        dest = os.path.join(self.shared_dir, os.path.basename(filename))
+    def _dedup_path(self, dest):
+        base, ext = os.path.splitext(dest)
         counter = 0
-        base, ext = os.path.splitext(os.path.basename(filename))
         while os.path.exists(dest):
             counter += 1
-            dest = os.path.join(self.shared_dir, f"{base}.{counter}{ext}")
+            dest = f"{base}.{counter}{ext}"
+        return dest
+
+    def move_to_shared(self, filename: str, source_path: str) -> str:
+        dest = self._dedup_path(os.path.join(self.shared_dir, os.path.basename(filename)))
+        shutil.move(source_path, dest)
+        return dest
+
+    def upload_to_shared(self, filename: str, data: bytes) -> str:
+        dest = self._dedup_path(os.path.join(self.shared_dir, os.path.basename(filename)))
         with open(dest, "wb") as f:
             f.write(data)
         return dest

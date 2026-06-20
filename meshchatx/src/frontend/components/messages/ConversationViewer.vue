@@ -3040,6 +3040,7 @@ export default {
         },
         onContactUpdatedForBanner(data) {
             if (this.selectedPeer?.destination_hash === data?.remote_identity_hash) {
+                this.selectedPeer.is_contact = true;
                 this.isStrangerPeer = false;
                 this.strangerBannerDismissed = true;
             }
@@ -3075,6 +3076,7 @@ export default {
                         name: displayName,
                     }),
                 });
+                this.selectedPeer.is_contact = true;
                 this.isStrangerPeer = false;
                 this.strangerBannerDismissed = true;
                 GlobalEmitter.emit("contact-updated", {
