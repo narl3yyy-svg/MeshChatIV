@@ -44,18 +44,40 @@ check_node_version() {
 
 install_node_ubuntu() {
     info "Installing Node.js v22.x on Ubuntu/Debian..."
-    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - || {
-        err "Failed to add NodeSource repository"
-        info "Trying manual install via nodejs.org..."
+
+    # Try NodeSource first
+    if curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -; then
+        sudo apt-get install -y -qq nodejs npm || {
+            err "Failed to install Node.js via apt"
+            exit 1
+        }
+        # Some Ubuntu versions install nodejs but not the 'node' symlink
+        if ! command -v node &>/dev/null && command -v nodejs &>/dev/null; then
+            sudo apt-get install -y -qq nodejs-legacy 2>/dev/null || \
+                sudo ln -sf "$(command -v nodejs)" /usr/local/bin/node
+        fi
+    else
+        warn "NodeSource unavailable, installing via tarball..."
         curl -fsSL https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz -o /tmp/node.tar.xz
-        sudo tar -xf /tmp/node.tar.xz -C /usr/local --strip-components=1
+        sudo mkdir -p /usr/local/lib/nodejs
+        sudo tar -xf /tmp/node.tar.xz -C /usr/local/lib/nodejs
         rm -f /tmp/node.tar.xz
-    }
-    sudo apt-get install -y -qq nodejs || {
-        err "Failed to install Node.js"
+        NODE_DIR="/usr/local/lib/nodejs/node-v22.14.0-linux-x64"
+        # Symlink binaries into /usr/local/bin
+        for bin in node npm npx corepack; do
+            if [ -f "$NODE_DIR/bin/$bin" ]; then
+                sudo ln -sf "$NODE_DIR/bin/$bin" "/usr/local/bin/$bin"
+            fi
+        done
+        export PATH="/usr/local/bin:$PATH"
+    fi
+
+    if command -v node &>/dev/null; then
+        ok "Node.js v$(node --version | sed 's/v//') installed"
+    else
+        err "Node.js installation failed — node command not found"
         exit 1
-    }
-    ok "Node.js v22 installed: $(node --version)"
+    fi
 }
 
 install_node_arch() {
@@ -91,13 +113,29 @@ install_ubuntu_deps() {
         install_node_ubuntu
     fi
 
-    sudo apt-get install -y -qq nodejs 2>/dev/null || true
-
-    if ! command -v pnpm &>/dev/null; then
-        info "Installing pnpm via npm..."
-        sudo npm install -g pnpm
+    # Ensure npm is available (may be missing on minimal Ubuntu installs)
+    if ! command -v npm &>/dev/null; then
+        info "Installing npm..."
+        sudo apt-get install -y -qq npm 2>/dev/null || true
     fi
-    ok "pnpm: $(pnpm --version)"
+
+    # Install pnpm — try corepack first (built into Node 22+), fallback to npm
+    if ! command -v pnpm &>/dev/null; then
+        if command -v corepack &>/dev/null; then
+            info "Enabling pnpm via corepack..."
+            sudo corepack enable pnpm 2>/dev/null || true
+        fi
+        if ! command -v pnpm &>/dev/null; then
+            info "Installing pnpm via npm..."
+            sudo npm install -g pnpm
+        fi
+    fi
+
+    if command -v pnpm &>/dev/null; then
+        ok "pnpm: $(pnpm --version)"
+    else
+        warn "pnpm not found — frontend build will fail"
+    fi
 
     if ! command -v uv &>/dev/null; then
         info "Installing uv (Python package manager)..."
@@ -131,11 +169,23 @@ install_arch_deps() {
         install_node_arch
     fi
 
+    # Install pnpm — try corepack first (built into Node 22+), fallback to npm
     if ! command -v pnpm &>/dev/null; then
-        info "Installing pnpm via npm..."
-        sudo npm install -g pnpm
+        if command -v corepack &>/dev/null; then
+            info "Enabling pnpm via corepack..."
+            sudo corepack enable pnpm 2>/dev/null || true
+        fi
+        if ! command -v pnpm &>/dev/null; then
+            info "Installing pnpm via npm..."
+            sudo npm install -g pnpm
+        fi
     fi
-    ok "pnpm: $(pnpm --version)"
+
+    if command -v pnpm &>/dev/null; then
+        ok "pnpm: $(pnpm --version)"
+    else
+        warn "pnpm not found — frontend build will fail"
+    fi
 
     if ! command -v uv &>/dev/null; then
         info "Installing uv (Python package manager)..."
@@ -149,6 +199,9 @@ install_arch_deps() {
 install_project() {
     info "Installing MeshChatIV project dependencies..."
     cd "$(dirname "$0")/.."
+
+    # Ensure Node.js/npm/pnpm are on PATH (tarball install may not persist across sudo)
+    export PATH="/usr/local/bin:/usr/local/lib/nodejs/node-v22.14.0-linux-x64/bin:$PATH"
 
     # Install Node.js dependencies
     info "Running: pnpm install"
