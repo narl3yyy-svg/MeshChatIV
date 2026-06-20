@@ -38,21 +38,21 @@ detect_distro() {
 remove_ubuntu_packages() {
     info "Removing MeshChatIV system packages (Ubuntu/Debian)..."
 
-    # Only remove packages that were specifically installed for MeshChatIV
-    # and are not likely needed by other software
-    local packages=()
+    if confirm "Remove Node.js v22 (if installed via NodeSource for MeshChat)?"; then
+        info "Removing NodeSource repository and Node.js..."
+        sudo rm -f /etc/apt/sources.list.d/nodesource.list 2>/dev/null || true
+        sudo apt-get remove --purge -y -qq nodejs 2>/dev/null || true
+        sudo apt-get autoremove --purge -y -qq 2>/dev/null || true
+        warn "If you installed Node.js via another method, remove it manually."
+    fi
 
     if confirm "Remove pnpm (globally installed)?"; then
-        packages+=(pnpm)
+        sudo npm uninstall -g pnpm 2>/dev/null || true
     fi
 
     if confirm "Remove uv (globally installed)?"; then
         rm -f "$HOME/.cargo/bin/uv" "$HOME/.local/bin/uv" 2>/dev/null || true
         warn "uv binary removed. To fully remove uv, also check ~/.cargo and ~/.local directories."
-    fi
-
-    if [ ${#packages[@]} -gt 0 ]; then
-        sudo npm uninstall -g "${packages[@]}" 2>/dev/null || true
     fi
 
     ok "Ubuntu packages removed."
@@ -73,6 +73,34 @@ remove_arch_packages() {
     fi
 
     ok "Arch packages removed."
+}
+
+remove_reticulum_config() {
+    if confirm "Remove Reticulum configuration and identities (shared with other Reticulum apps)?"; then
+        warn "This will remove ~/.reticulum entirely, affecting ALL Reticulum applications."
+        if confirm "  Really remove ~/.reticulum?"; then
+            rm -rf "$HOME/.reticulum"
+            ok "Reticulum config removed."
+        fi
+    else
+        if confirm "Remove MeshChat-added TCP interfaces from Reticulum config?"; then
+            local rconfig="$HOME/.reticulum/config"
+            if [ -f "$rconfig" ]; then
+                # Create a backup
+                cp "$rconfig" "${rconfig}.meshchat-backup-$(date +%s)"
+                # Remove TCPClientInterface and TCPServerInterface sections added by MeshChat
+                awk '
+                    /^\[TCPClientInterface\]/ { skip=1 }
+                    /^\[TCPServerInterface\]/ { skip=1 }
+                    /^\[/ && !/^\[TCPClientInterface\]/ && !/^\[TCPServerInterface\]/ { skip=0 }
+                    !skip { print }
+                ' "$rconfig" > "${rconfig}.tmp" && mv "${rconfig}.tmp" "$rconfig"
+                ok "TCP interfaces removed from Reticulum config."
+            else
+                warn "No Reticulum config found at ~/.reticulum/config"
+            fi
+        fi
+    fi
 }
 
 remove_project_files() {
@@ -151,4 +179,35 @@ echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Note: Core system packages (python, nodejs, git, etc.) were kept"
 echo "as they may be needed by other software."
+echo ""
+echo "----------------------------------------"
+echo "  Uninstall Old MeshChatIV Version"
+echo "----------------------------------------"
+echo ""
+echo "If you had an older MeshChatIV installation (before the new"
+echo "RNS file sharing and Direct Connect features), it used the old"
+echo "RNCP file handler and may have lxmf-based or older storage files."
+echo ""
+echo "To clean up from an old version, run these commands manually:"
+echo ""
+echo "  # Remove old storage (if any)"
+echo "  rm -rf /path/to/MeshChatIV/storage"
+echo ""
+echo "  # Remove old virtual environment"
+echo "  rm -rf /path/to/MeshChatIV/.venv"
+echo ""
+echo "  # Remove old Reticulum config (shared with other RNS apps)"
+echo "  rm -rf ~/.reticulum"
+echo ""
+echo "  # Uninstall old system Node.js version (if v20 or older was used)"
+echo "  # Ubuntu/Debian:"
+echo "  sudo apt-get remove --purge nodejs"
+echo "  # Arch:"
+echo "  sudo pacman -Rns nodejs"
+echo ""
+echo "  # Remove globally installed npm packages from old installation"
+echo "  sudo npm uninstall -g pnpm"
+echo ""
+echo "  # Remove the old project directory"
+echo "  rm -rf /path/to/MeshChatIV"
 echo ""

@@ -11078,6 +11078,84 @@ class ReticulumMeshChat:
         async def rns_fileshare_storage(_request):
             return web.json_response(self.rns_fileshare_handler.get_storage_info())
 
+        # --- Quick Connect (Direct TCP IPv4 Peer) ---
+
+        @routes.post("/api/v1/rns-fileshare/quick-connect")
+        async def rns_fileshare_quick_connect(request):
+            data = await request.json()
+            peer_host = data.get("host", "").strip()
+            peer_port = str(data.get("port", "4242")).strip()
+            name = data.get("name", "").strip() or f"Direct Peer ({peer_host}:{peer_port})"
+
+            if not peer_host:
+                return web.json_response({"message": "Peer host/IP is required"}, status=422)
+
+            interfaces = self._get_interfaces_section()
+
+            if name in interfaces:
+                counter = 1
+                while f"{name} ({counter})" in interfaces:
+                    counter += 1
+                name = f"{name} ({counter})"
+
+            interface_details = {
+                "type": "TCPClientInterface",
+                "target_host": peer_host,
+                "target_port": peer_port,
+                "interface_enabled": "true",
+            }
+
+            interfaces[name] = interface_details
+            if not self._write_reticulum_config():
+                return web.json_response({"message": "Failed to write Reticulum config"}, status=500)
+
+            return web.json_response({
+                "message": f"Direct TCP connection to {peer_host}:{peer_port} added as '{name}'. Restart MeshChat to connect.",
+                "name": name,
+                "interface": interface_details,
+            })
+
+        @routes.post("/api/v1/rns-fileshare/start-server")
+        async def rns_fileshare_start_server(request):
+            data = await request.json()
+            listen_ip = str(data.get("listen_ip", "0.0.0.0")).strip()
+            listen_port = str(data.get("listen_port", "4242")).strip()
+            name = data.get("name", "").strip() or f"TCP Server ({listen_ip}:{listen_port})"
+
+            interfaces = self._get_interfaces_section()
+
+            if name in interfaces:
+                counter = 1
+                while f"{name} ({counter})" in interfaces:
+                    counter += 1
+                name = f"{name} ({counter})"
+
+            interface_details = {
+                "type": "TCPServerInterface",
+                "listen_ip": listen_ip,
+                "listen_port": listen_port,
+                "interface_enabled": "true",
+            }
+
+            interfaces[name] = interface_details
+            if not self._write_reticulum_config():
+                return web.json_response({"message": "Failed to write Reticulum config"}, status=500)
+
+            return web.json_response({
+                "message": f"TCP Server listening on {listen_ip}:{listen_port} added as '{name}'. Restart MeshChat to start accepting connections.",
+                "name": name,
+                "interface": interface_details,
+            })
+
+        @routes.get("/api/v1/rns-fileshare/interfaces")
+        async def rns_fileshare_list_interfaces(_request):
+            interfaces = self._get_interfaces_snapshot()
+            tcp_interfaces = []
+            for name, details in interfaces.items():
+                if details.get("type") in ("TCPClientInterface", "TCPServerInterface"):
+                    tcp_interfaces.append({"name": name, **details})
+            return web.json_response({"interfaces": tcp_interfaces})
+
         # --- Page Node API ---
 
         @routes.get("/api/v1/page-nodes")
