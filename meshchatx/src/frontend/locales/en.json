@@ -1731,7 +1731,13 @@
         "load_more": "Load more",
         "rns_hash_copied": "Identity hash copied to clipboard",
         "dest_hash_copied": "Destination hash copied to clipboard",
-        "lxmf_hash_copied": "LXMF destination hash copied to clipboard"
+        "lxmf_hash_copied": "LXMF destination hash copied to clipboard",
+        "clear_announces": "Clear",
+        "cleared": "Announces cleared",
+        "clear_failed": "Failed to clear announces",
+        "add_to_contacts": "Add to contacts",
+        "contact_added": "Added {name} to contacts",
+        "contact_add_failed": "Failed to add contact"
     },
     "files": {
         "title": "File Window",
@@ -1803,7 +1809,9 @@
         "provide_allowed_hash": "Please provide at least one allowed identity hash",
         "failed_to_listen": "Failed to start listener",
         "failed_to_stop": "Failed to stop listener",
-        "web_path_hint": "For web clients, use the full server-side path. Desktop Electron users can use the file picker.",
+        "uploading_file": "Uploading file to server...",
+        "file_uploaded": "File uploaded to shared directory",
+        "failed_to_upload": "Failed to upload file",
         "web_save_path_prompt": "Enter save directory path:",
         "connect": "Direct Connect",
         "direct_connect": "Direct TCP IPv4 Peer Connection",

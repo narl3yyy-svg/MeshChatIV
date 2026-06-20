@@ -12,8 +12,8 @@
                             {{ $t("announces.description") }}
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="relative flex-1 sm:w-56">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="relative flex-1 sm:w-48">
                             <MaterialDesignIcon
                                 icon-name="magnify"
                                 class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
@@ -33,6 +33,7 @@
                         >
                             <option value="">{{ $t("announces.all_aspects") }}</option>
                             <option value="lxmf.delivery">LXMF</option>
+                            <option value="lxmf.propagation">Propagation</option>
                             <option value="lxst.telephony">LXST (Calls)</option>
                             <option value="nomadnetwork.node">Nomad Network</option>
                             <option value="rrc.hub">RRC Hub</option>
@@ -48,6 +49,15 @@
                                 class="w-4 h-4"
                                 :class="{ 'animate-spin-reverse': isLoading }"
                             />
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary-chip px-3 py-2 text-sm text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            :title="$t('announces.clear_announces')"
+                            @click="clearAnnounces"
+                        >
+                            <MaterialDesignIcon icon-name="delete-sweep" class="w-4 h-4" />
+                            <span class="hidden sm:inline">{{ $t("announces.clear_announces") }}</span>
                         </button>
                     </div>
                 </div>
@@ -110,6 +120,14 @@
                                     @click="copyHash(a.identity_hash, $t('announces.rns_hash_copied'))"
                                 >
                                     <MaterialDesignIcon icon-name="content-copy" class="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="shrink-0 text-gray-400 hover:text-green-600 transition-colors"
+                                    :title="$t('announces.add_to_contacts')"
+                                    @click="addToContacts(a)"
+                                >
+                                    <MaterialDesignIcon icon-name="account-plus" class="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                     type="button"
@@ -238,6 +256,33 @@ export default {
             this.searchTimeout = setTimeout(() => {
                 this.fetchAnnounces();
             }, 300);
+        },
+        async clearAnnounces() {
+            try {
+                const params = {};
+                if (this.selectedAspect) params.aspect = this.selectedAspect;
+                await window.api.delete("/api/v1/maintenance/announces", { params });
+                ToastUtils.success(this.$t("announces.cleared"));
+                this.fetchAnnounces();
+            } catch {
+                ToastUtils.error(this.$t("announces.clear_failed"));
+            }
+        },
+        async addToContacts(a) {
+            const name = a.display_name || a.custom_display_name || "Announced Peer";
+            const payload = {
+                name,
+                remote_identity_hash: a.identity_hash,
+            };
+            if (a.lxmf_destination_hash && a.lxmf_destination_hash !== a.destination_hash) {
+                payload.lxmf_address = a.lxmf_destination_hash;
+            }
+            try {
+                await window.api.post("/api/v1/telephone/contacts", payload);
+                ToastUtils.success(this.$t("announces.contact_added", { name }));
+            } catch (e) {
+                ToastUtils.error(e.response?.data?.message || this.$t("announces.contact_add_failed"));
+            }
         },
         aspectClass(aspect) {
             if (aspect?.startsWith("lxmf")) return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300";

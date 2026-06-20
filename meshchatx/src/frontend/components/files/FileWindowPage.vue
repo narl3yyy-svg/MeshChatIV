@@ -897,12 +897,22 @@ export default {
             }
             this.$refs.sendFileInput?.click();
         },
-        onWebSendFilePicked(event) {
+        async onWebSendFilePicked(event) {
             const f = event.target.files?.[0];
             event.target.value = "";
             if (!f) return;
             this.sendFilePath = f.name;
-            DialogUtils.alert(this.$t("files.web_path_hint"));
+            ToastUtils.info(this.$t("files.uploading_file"));
+            try {
+                const formData = new FormData();
+                formData.append("file", f);
+                const response = await window.api.post("/api/v1/rns-fileshare/files/upload", formData);
+                this.sendFilePath = response.data.path;
+                ToastUtils.success(this.$t("files.file_uploaded"));
+            } catch (e) {
+                this.sendFilePath = f.name;
+                ToastUtils.error(e.response?.data?.message || this.$t("files.failed_to_upload"));
+            }
         },
         async pickFetchSaveDirectory() {
             const p = await ElectronUtils.pickDirectory();
@@ -1054,12 +1064,22 @@ export default {
             }
             this.$refs.addFileInput?.click();
         },
-        onWebAddFilePicked(event) {
+        async onWebAddFilePicked(event) {
             const f = event.target.files?.[0];
             event.target.value = "";
             if (!f) return;
             this.addFilePath = f.name;
-            DialogUtils.alert(this.$t("files.web_path_hint"));
+            ToastUtils.info(this.$t("files.uploading_file"));
+            try {
+                const formData = new FormData();
+                formData.append("file", f);
+                const response = await window.api.post("/api/v1/rns-fileshare/files/upload", formData);
+                this.addFilePath = response.data.path;
+                ToastUtils.success(this.$t("files.file_uploaded"));
+            } catch (e) {
+                this.addFilePath = f.name;
+                ToastUtils.error(e.response?.data?.message || this.$t("files.failed_to_upload"));
+            }
         },
         async copyToShared() {
             if (!this.addFilePath) {

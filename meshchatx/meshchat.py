@@ -11050,6 +11050,19 @@ class ReticulumMeshChat:
         async def rns_fileshare_list_received(_request):
             return web.json_response({"files": self.rns_fileshare_handler.list_received_files()})
 
+        @routes.post("/api/v1/rns-fileshare/files/upload")
+        async def rns_fileshare_upload(request):
+            reader = await request.multipart()
+            field = await reader.next()
+            if not field or field.name != "file":
+                return web.json_response({"message": "No file field in upload"}, status=400)
+            filename = field.filename or "uploaded.bin"
+            data = await field.read()
+            if not data:
+                return web.json_response({"message": "Empty file"}, status=400)
+            dest_path = self.rns_fileshare_handler.upload_to_shared(filename, data)
+            return web.json_response({"path": dest_path, "message": "File uploaded to shared directory"})
+
         @routes.post("/api/v1/rns-fileshare/files/copy-to-shared")
         async def rns_fileshare_copy_to_shared(request):
             data = await request.json()
