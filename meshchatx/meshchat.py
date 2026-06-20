@@ -590,6 +590,15 @@ class ReticulumMeshChat:
             self.current_context.rncp_handler = value
 
     @property
+    def rns_fileshare_handler(self):
+        return self.current_context.rns_fileshare_handler if self.current_context else None
+
+    @rns_fileshare_handler.setter
+    def rns_fileshare_handler(self, value):
+        if self.current_context:
+            self.current_context.rns_fileshare_handler = value
+
+    @property
     def rnsh_manager(self):
         return self.current_context.rnsh_manager if self.current_context else None
 
@@ -10902,6 +10911,172 @@ class ReticulumMeshChat:
                 return web.json_response({"message": "RNCP listener stopped"})
             except Exception as e:
                 return web.json_response({"message": str(e)}, status=500)
+
+        # --- RNS FileShare API ---
+
+        @routes.post("/api/v1/rns-fileshare/send")
+        async def rns_fileshare_send(request):
+            data = await request.json()
+            destination_hash_str = data.get("destination_hash", "")
+            file_path = data.get("file_path", "")
+            description = data.get("description", "")
+            timeout = float(data.get("timeout", RNS.Transport.PATH_REQUEST_TIMEOUT))
+
+            try:
+                destination_hash = bytes.fromhex(destination_hash_str)
+            except Exception as e:
+                return web.json_response({"message": f"Invalid destination hash: {e}"}, status=400)
+
+            transfer_id = None
+
+            def on_transfer_started(tid):
+                nonlocal transfer_id
+                transfer_id = tid
+
+            def on_progress(progress):
+                if transfer_id:
+                    AsyncUtils.run_async(
+                        self._broadcast_websocket_message({
+                            "type": "rns_fileshare.transfer.progress",
+                            "transfer_id": transfer_id,
+                            "progress": progress,
+                        }),
+                    )
+
+            try:
+                result = await self.rns_fileshare_handler.send_file(
+                    destination_hash=destination_hash,
+                    file_path=file_path,
+                    description=description,
+                    timeout=timeout,
+                    on_progress=on_progress,
+                    on_transfer_started=on_transfer_started,
+                )
+                return web.json_response(result)
+            except Exception as e:
+                return web.json_response({"message": str(e)}, status=500)
+
+        @routes.post("/api/v1/rns-fileshare/fetch")
+        async def rns_fileshare_fetch(request):
+            data = await request.json()
+            destination_hash_str = data.get("destination_hash", "")
+            file_path = data.get("file_path", "")
+            timeout = float(data.get("timeout", RNS.Transport.PATH_REQUEST_TIMEOUT))
+            save_path = data.get("save_path")
+            allow_overwrite = bool(data.get("allow_overwrite", False))
+
+            try:
+                destination_hash = bytes.fromhex(destination_hash_str)
+            except Exception as e:
+                return web.json_response({"message": f"Invalid destination hash: {e}"}, status=400)
+
+            transfer_id = None
+
+            def on_transfer_started(tid):
+                nonlocal transfer_id
+                transfer_id = tid
+
+            def on_progress(progress):
+                if transfer_id:
+                    AsyncUtils.run_async(
+                        self._broadcast_websocket_message({
+                            "type": "rns_fileshare.transfer.progress",
+                            "transfer_id": transfer_id,
+                            "progress": progress,
+                        }),
+                    )
+
+            try:
+                result = await self.rns_fileshare_handler.fetch_file(
+                    destination_hash=destination_hash,
+                    file_path=file_path,
+                    timeout=timeout,
+                    on_progress=on_progress,
+                    save_path=save_path,
+                    allow_overwrite=allow_overwrite,
+                    on_transfer_started=on_transfer_started,
+                )
+                return web.json_response(result)
+            except Exception as e:
+                return web.json_response({"message": str(e)}, status=500)
+
+        @routes.get("/api/v1/rns-fileshare/transfer/{transfer_id}")
+        async def rns_fileshare_transfer_status(request):
+            transfer_id = request.match_info.get("transfer_id", "")
+            status = self.rns_fileshare_handler.get_transfer_status(transfer_id)
+            if status:
+                return web.json_response(status)
+            return web.json_response({"message": "Transfer not found"}, status=404)
+
+        @routes.post("/api/v1/rns-fileshare/listen")
+        async def rns_fileshare_listen(request):
+            data = await request.json()
+            allowed_hashes = data.get("allowed_hashes", [])
+            fetch_allowed = bool(data.get("fetch_allowed", False))
+            fetch_jail = data.get("fetch_jail")
+            allow_overwrite = bool(data.get("allow_overwrite", False))
+
+            try:
+                destination_hash = self.rns_fileshare_handler.setup_receive_destination(
+                    allowed_hashes=allowed_hashes,
+                    fetch_allowed=fetch_allowed,
+                    fetch_jail=fetch_jail,
+                    allow_overwrite=allow_overwrite,
+                )
+                return web.json_response({
+                    "destination_hash": destination_hash,
+                    "message": "RNS FileShare listener started",
+                })
+            except Exception as e:
+                return web.json_response({"message": str(e)}, status=500)
+
+        @routes.get("/api/v1/rns-fileshare/status")
+        async def rns_fileshare_status(_request):
+            return web.json_response(self.rns_fileshare_handler.get_listener_status())
+
+        @routes.post("/api/v1/rns-fileshare/stop")
+        async def rns_fileshare_stop(_request):
+            try:
+                self.rns_fileshare_handler.teardown_receive_destination()
+                return web.json_response({"message": "RNS FileShare listener stopped"})
+            except Exception as e:
+                return web.json_response({"message": str(e)}, status=500)
+
+        @routes.get("/api/v1/rns-fileshare/files/shared")
+        async def rns_fileshare_list_shared(_request):
+            return web.json_response({"files": self.rns_fileshare_handler.list_shared_files()})
+
+        @routes.get("/api/v1/rns-fileshare/files/received")
+        async def rns_fileshare_list_received(_request):
+            return web.json_response({"files": self.rns_fileshare_handler.list_received_files()})
+
+        @routes.post("/api/v1/rns-fileshare/files/copy-to-shared")
+        async def rns_fileshare_copy_to_shared(request):
+            data = await request.json()
+            source_path = data.get("source_path", "")
+            if not source_path:
+                return web.json_response({"message": "source_path is required"}, status=400)
+            try:
+                dest_path = self.rns_fileshare_handler.copy_to_shared(source_path)
+                return web.json_response({"path": dest_path, "message": "File copied to shared directory"})
+            except Exception as e:
+                return web.json_response({"message": str(e)}, status=500)
+
+        @routes.delete("/api/v1/rns-fileshare/files/shared/{filename}")
+        async def rns_fileshare_delete_shared(request):
+            filename = request.match_info.get("filename", "")
+            if self.rns_fileshare_handler.delete_shared_file(filename):
+                return web.json_response({"message": "File deleted"})
+            return web.json_response({"message": "File not found"}, status=404)
+
+        @routes.get("/api/v1/rns-fileshare/history")
+        async def rns_fileshare_history(request):
+            limit = int(request.query.get("limit", 50))
+            return web.json_response({"history": self.rns_fileshare_handler.get_transfer_history(limit)})
+
+        @routes.get("/api/v1/rns-fileshare/storage")
+        async def rns_fileshare_storage(_request):
+            return web.json_response(self.rns_fileshare_handler.get_storage_info())
 
         # --- Page Node API ---
 

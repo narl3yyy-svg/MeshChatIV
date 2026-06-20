@@ -282,6 +282,11 @@ const router = createRouter({
             component: defineAsyncComponent(() => import("./components/debug/DebugLogsPage.vue")),
         },
         {
+            name: "files",
+            path: "/files",
+            component: defineAsyncComponent(() => import("./components/files/FileWindowPage.vue")),
+        },
+        {
             name: "call",
             path: "/call",
             component: defineAsyncComponent(() => import("./components/call/CallPage.vue")),

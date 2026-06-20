@@ -332,6 +332,19 @@
                                         </SidebarLink>
                                     </li>
 
+                                    <!-- file window -->
+                                    <li>
+                                        <SidebarLink :to="{ name: 'files' }" :is-collapsed="isSidebarCollapsed">
+                                            <template #icon>
+                                                <MaterialDesignIcon
+                                                    icon-name="file-multiple"
+                                                    class="w-6 h-6 text-gray-700 dark:text-gray-200"
+                                                />
+                                            </template>
+                                            <template #text>{{ $t("app.files") }}</template>
+                                        </SidebarLink>
+                                    </li>
+
                                     <!-- tools -->
                                     <li>
                                         <SidebarLink :to="{ name: 'tools' }" :is-collapsed="isSidebarCollapsed">

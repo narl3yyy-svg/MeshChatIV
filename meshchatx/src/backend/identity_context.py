@@ -25,6 +25,7 @@ from meshchatx.src.backend.message_handler import MessageHandler
 from meshchatx.src.backend.nomadnet_utils import NomadNetworkManager
 from meshchatx.src.backend.ringtone_manager import RingtoneManager
 from meshchatx.src.backend.rncp_handler import RNCPHandler
+from meshchatx.src.backend.rns_fileshare_handler import RNSFileShareHandler
 from meshchatx.src.backend.rnsh_manager import RNSHManager
 from meshchatx.src.backend.rrc import RRCManager, RRCServerManager
 from meshchatx.src.backend.rnpath_handler import RNPathHandler
@@ -81,6 +82,7 @@ class IdentityContext:
         self.ringtone_manager = None
         self.auto_propagation_manager = None
         self.rncp_handler = None
+        self.rns_fileshare_handler = None
         self.rnsh_manager = None
         self.rnstatus_handler = None
         self.rnpath_handler = None
@@ -117,6 +119,18 @@ class IdentityContext:
             AsyncUtils.run_async(
                 self.app._broadcast_websocket_message(
                     {"type": "rncp.receive.completed", **payload},
+                ),
+            )
+        except Exception:
+            pass
+
+    def _rns_fileshare_emit_receive_completed(self, payload):
+        try:
+            from meshchatx.src.backend.async_utils import AsyncUtils
+
+            AsyncUtils.run_async(
+                self.app._broadcast_websocket_message(
+                    {"type": "rns_fileshare.receive.completed", **payload},
                 ),
             )
         except Exception:
@@ -276,6 +290,12 @@ class IdentityContext:
             storage_dir=self.app.storage_dir,
         )
         self.rncp_handler.on_receive_completed = self._rncp_emit_receive_completed
+        self.rns_fileshare_handler = RNSFileShareHandler(
+            reticulum_instance=getattr(self.app, "reticulum", None),
+            identity=self.identity,
+            storage_dir=self.app.storage_dir,
+        )
+        self.rns_fileshare_handler.on_receive_completed = self._rns_fileshare_emit_receive_completed
         self.rnsh_manager = RNSHManager(
             storage_dir=self.storage_path,
             reticulum_config_dir=getattr(self.app, "reticulum_config_dir", None),
@@ -661,6 +681,11 @@ class IdentityContext:
                 with contextlib.suppress(Exception):
                     self.rncp_handler.teardown_receive_destination()
                 self.rncp_handler = None
+
+            if self.rns_fileshare_handler:
+                with contextlib.suppress(Exception):
+                    self.rns_fileshare_handler.teardown_receive_destination()
+                self.rns_fileshare_handler = None
 
             if self.message_router:
                 # Break cycles in mocks/objects
