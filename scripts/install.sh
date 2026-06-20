@@ -45,39 +45,70 @@ check_node_version() {
 install_node_ubuntu() {
     info "Installing Node.js v22.x on Ubuntu/Debian..."
 
-    # Try NodeSource first
-    if curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -; then
-        sudo apt-get install -y -qq nodejs npm || {
-            err "Failed to install Node.js via apt"
-            exit 1
-        }
-        # Some Ubuntu versions install nodejs but not the 'node' symlink
-        if ! command -v node &>/dev/null && command -v nodejs &>/dev/null; then
-            sudo apt-get install -y -qq nodejs-legacy 2>/dev/null || \
-                sudo ln -sf "$(command -v nodejs)" /usr/local/bin/node
-        fi
-    else
-        warn "NodeSource unavailable, installing via tarball..."
-        curl -fsSL https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz -o /tmp/node.tar.xz
-        sudo mkdir -p /usr/local/lib/nodejs
-        sudo tar -xf /tmp/node.tar.xz -C /usr/local/lib/nodejs
-        rm -f /tmp/node.tar.xz
-        NODE_DIR="/usr/local/lib/nodejs/node-v22.14.0-linux-x64"
-        # Symlink binaries into /usr/local/bin
-        for bin in node npm npx corepack; do
-            if [ -f "$NODE_DIR/bin/$bin" ]; then
-                sudo ln -sf "$NODE_DIR/bin/$bin" "/usr/local/bin/$bin"
+    # Step 1: Try the distro's default nodejs package (Ubuntu 24.04+ has v22)
+    if command -v apt-cache &>/dev/null; then
+        local apt_node_version
+        apt_node_version=$(apt-cache show nodejs 2>/dev/null | grep '^Version:' | head -1 | sed 's/^Version: *\([0-9]*\).*/\1/')
+        if [ -n "$apt_node_version" ] && [ "$apt_node_version" -ge 22 ]; then
+            info "Distro package nodejs v${apt_node_version}.x available — installing..."
+            sudo apt-get install -y -qq nodejs npm 2>/dev/null || sudo apt-get install -y -qq nodejs
+            if command -v node &>/dev/null || command -v nodejs &>/dev/null; then
+                ok "Node.js installed from distro packages"
+                return 0
             fi
-        done
-        export PATH="/usr/local/bin:$PATH"
+        fi
     fi
 
-    if command -v node &>/dev/null; then
-        ok "Node.js v$(node --version | sed 's/v//') installed"
+    # Step 2: Try NodeSource
+    info "Trying NodeSource repository..."
+    if curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 2>/dev/null; then
+        sudo apt-get install -y -qq nodejs npm 2>/dev/null || sudo apt-get install -y -qq nodejs
+        # Some Ubuntu versions provide nodejs but not the 'node' symlink
+        if ! command -v node &>/dev/null && command -v nodejs &>/dev/null; then
+            sudo ln -sf "$(command -v nodejs)" /usr/local/bin/node
+        fi
+        # Ensure npm is available (may be a separate package)
+        if ! command -v npm &>/dev/null; then
+            sudo apt-get install -y -qq npm 2>/dev/null || true
+        fi
+        if command -v node &>/dev/null; then
+            ok "Node.js v$(node --version | sed 's/v//') installed from NodeSource"
+            return 0
+        fi
     else
-        err "Node.js installation failed — node command not found"
-        exit 1
+        warn "NodeSource repository unavailable"
     fi
+
+    # Step 3: Fall back to nvm (most reliable for any Ubuntu version)
+    info "Installing Node.js via nvm (Node Version Manager)..."
+    export NVM_DIR="$HOME/.nvm"
+    if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    fi
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        . "$NVM_DIR/nvm.sh"
+        nvm install 22 --default 2>/dev/null || nvm install 22 2>/dev/null || {
+            err "nvm install failed"
+            exit 1
+        }
+        # Symlink into /usr/local/bin so sudo commands can find node
+        local nvm_node
+        nvm_node="$NVM_DIR/versions/node/$(nvm current 2>/dev/null)/bin/node"
+        if [ -f "$nvm_node" ]; then
+            sudo ln -sf "$nvm_node" /usr/local/bin/node
+            sudo ln -sf "$(dirname "$nvm_node")/npm" /usr/local/bin/npm 2>/dev/null || true
+            sudo ln -sf "$(dirname "$nvm_node")/npx" /usr/local/bin/npx 2>/dev/null || true
+            sudo ln -sf "$(dirname "$nvm_node")/corepack" /usr/local/bin/corepack 2>/dev/null || true
+        fi
+        export PATH="/usr/local/bin:$PATH"
+        if command -v node &>/dev/null; then
+            ok "Node.js v$(node --version | sed 's/v//') installed via nvm"
+            return 0
+        fi
+    fi
+
+    err "All installation methods failed — install Node.js v22+ manually from https://nodejs.org"
+    exit 1
 }
 
 install_node_arch() {
@@ -200,8 +231,8 @@ install_project() {
     info "Installing MeshChatIV project dependencies..."
     cd "$(dirname "$0")/.."
 
-    # Ensure Node.js/npm/pnpm are on PATH (tarball install may not persist across sudo)
-    export PATH="/usr/local/bin:/usr/local/lib/nodejs/node-v22.14.0-linux-x64/bin:$PATH"
+    # Ensure Node.js/npm/pnpm are on PATH
+    export PATH="/usr/local/bin:$HOME/.nvm/versions/node/$(node --version 2>/dev/null)/bin:$PATH"
 
     # Install Node.js dependencies
     info "Running: pnpm install"
