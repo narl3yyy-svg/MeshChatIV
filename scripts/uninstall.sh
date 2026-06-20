@@ -38,7 +38,7 @@ detect_distro() {
 remove_ubuntu_packages() {
     info "Removing MeshChatIV system packages (Ubuntu/Debian)..."
 
-    if confirm "Remove Node.js v22 (if installed via NodeSource for MeshChat)?"; then
+    if confirm "Remove Node.js v24 (if installed via NodeSource for MeshChat)?"; then
         info "Removing NodeSource repository and Node.js..."
         sudo rm -f /etc/apt/sources.list.d/nodesource.list 2>/dev/null || true
         sudo apt-get remove --purge -y -qq nodejs 2>/dev/null || true

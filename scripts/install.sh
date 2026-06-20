@@ -3,7 +3,7 @@ set -euo pipefail
 
 # MeshChatIV Install Script
 # Supports Ubuntu/Debian and Arch Linux
-# Requires Node.js >= 22
+# Requires Node.js >= 24
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -16,7 +16,7 @@ ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 err()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-MIN_NODE_VERSION=22
+MIN_NODE_VERSION=24
 
 detect_distro() {
     if [ -f /etc/os-release ]; then
@@ -43,13 +43,13 @@ check_node_version() {
 }
 
 install_node_ubuntu() {
-    info "Installing Node.js v22.x on Ubuntu/Debian..."
+    info "Installing Node.js v24.x on Ubuntu/Debian..."
 
-    # Step 1: Try the distro's default nodejs package (Ubuntu 24.04+ has v22)
+    # Step 1: Try the distro's default nodejs package (Ubuntu 26.04+ has v24)
     if command -v apt-cache &>/dev/null; then
         local apt_node_version
         apt_node_version=$(apt-cache show nodejs 2>/dev/null | grep '^Version:' | head -1 | sed 's/^Version: *\([0-9]*\).*/\1/')
-        if [ -n "$apt_node_version" ] && [ "$apt_node_version" -ge 22 ]; then
+        if [ -n "$apt_node_version" ] && [ "$apt_node_version" -ge 24 ]; then
             info "Distro package nodejs v${apt_node_version}.x available — installing..."
             sudo apt-get install -y -qq nodejs npm 2>/dev/null || sudo apt-get install -y -qq nodejs
             if command -v node &>/dev/null || command -v nodejs &>/dev/null; then
@@ -61,7 +61,7 @@ install_node_ubuntu() {
 
     # Step 2: Try NodeSource
     info "Trying NodeSource repository..."
-    if curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - 2>/dev/null; then
+    if curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash - 2>/dev/null; then
         sudo apt-get install -y -qq nodejs npm 2>/dev/null || sudo apt-get install -y -qq nodejs
         # Some Ubuntu versions provide nodejs but not the 'node' symlink
         if ! command -v node &>/dev/null && command -v nodejs &>/dev/null; then
@@ -87,7 +87,7 @@ install_node_ubuntu() {
     fi
     if [ -s "$NVM_DIR/nvm.sh" ]; then
         . "$NVM_DIR/nvm.sh"
-        nvm install 22 --default 2>/dev/null || nvm install 22 2>/dev/null || {
+        nvm install 24 --default 2>/dev/null || nvm install 24 2>/dev/null || {
             err "nvm install failed"
             exit 1
         }
@@ -107,12 +107,12 @@ install_node_ubuntu() {
         fi
     fi
 
-    err "All installation methods failed — install Node.js v22+ manually from https://nodejs.org"
+    err "All installation methods failed — install Node.js v24+ manually from https://nodejs.org"
     exit 1
 }
 
 install_node_arch() {
-    info "Installing Node.js v22 on Arch Linux..."
+    info "Installing Node.js v24 on Arch Linux..."
     sudo pacman -S --noconfirm nodejs-lts-jod npm 2>/dev/null || {
         warn "LTS package not found, installing nodejs..."
         sudo pacman -S --noconfirm nodejs npm
@@ -149,8 +149,8 @@ install_ubuntu_deps() {
         info "Installing npm..."
         sudo apt-get install -y -qq npm 2>/dev/null || true
     fi
+    # Install pnpm — try corepack first (built into Node 24+), fallback to npm
 
-    # Install pnpm — try corepack first (built into Node 22+), fallback to npm
     if ! command -v pnpm &>/dev/null; then
         if command -v corepack &>/dev/null; then
             info "Enabling pnpm via corepack..."
@@ -199,8 +199,8 @@ install_arch_deps() {
     if ! check_node_version; then
         install_node_arch
     fi
+    # Install pnpm — try corepack first (built into Node 24+), fallback to npm
 
-    # Install pnpm — try corepack first (built into Node 22+), fallback to npm
     if ! command -v pnpm &>/dev/null; then
         if command -v corepack &>/dev/null; then
             info "Enabling pnpm via corepack..."
