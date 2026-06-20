@@ -82,19 +82,6 @@
                                     <MaterialDesignIcon icon-name="history" class="w-4 h-4 inline-block mr-1" />
                                     {{ $t("files.history") }}
                                 </button>
-                                <button
-                                    type="button"
-                                    :class="[
-                                        activeTab === 'connect'
-                                            ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400'
-                                            : 'text-gray-600 dark:text-gray-400',
-                                        'shrink-0 px-3 sm:px-4 py-2 text-sm font-semibold transition',
-                                    ]"
-                                    @click="activeTab = 'connect'; refreshInterfaces()"
-                                >
-                                    <MaterialDesignIcon icon-name="lan-connect" class="w-4 h-4 inline-block mr-1" />
-                                    {{ $t("files.connect") }}
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -121,11 +108,11 @@
                                 </div>
                                 <div
                                     v-if="showSendContactPicker"
-                                    class="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
+                                    class="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
                                 >
                                     <div
                                         v-if="contacts.length === 0"
-                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3"
+                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3 px-3"
                                     >
                                         {{ $t("files.no_contacts_found") }}
                                     </div>
@@ -133,17 +120,19 @@
                                         v-for="c in contacts"
                                         :key="c.id || c.remote_identity_hash"
                                         type="button"
-                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition flex items-center gap-2 border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
                                         @mousedown.prevent="selectSendContact(c)"
                                     >
-                                        <MaterialDesignIcon icon-name="account-multiple" class="w-4 h-4 shrink-0 text-gray-400 dark:text-zinc-500" />
-                                        <div class="min-w-0 flex-1">
-                                            <div class="font-medium text-gray-800 dark:text-zinc-200 truncate">
-                                                {{ c.name || $t("files.unnamed_contact") }}
-                                            </div>
-                                            <div class="text-xs text-gray-500 dark:text-zinc-400 font-mono truncate">
-                                                {{ c.remote_identity_hash || c.lxmf_address || "" }}
-                                            </div>
+                                        <div class="font-medium text-gray-800 dark:text-zinc-200 truncate mb-1">
+                                            {{ c.name || $t("files.unnamed_contact") }}
+                                        </div>
+                                        <div v-if="c.remote_identity_hash" class="flex items-center gap-1 text-xs">
+                                            <span class="shrink-0 px-1 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-mono font-semibold">RNS</span>
+                                            <span class="text-gray-500 dark:text-zinc-400 font-mono truncate">{{ c.remote_identity_hash }}</span>
+                                        </div>
+                                        <div v-if="c.lxmf_address && c.lxmf_address !== c.remote_identity_hash" class="flex items-center gap-1 text-xs mt-0.5">
+                                            <span class="shrink-0 px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-mono font-semibold">LXMF</span>
+                                            <span class="text-gray-500 dark:text-zinc-400 font-mono truncate">{{ c.lxmf_address }}</span>
                                         </div>
                                     </button>
                                 </div>
@@ -257,11 +246,11 @@
                                 </div>
                                 <div
                                     v-if="showFetchContactPicker"
-                                    class="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
+                                    class="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg"
                                 >
                                     <div
                                         v-if="contacts.length === 0"
-                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3"
+                                        class="text-sm text-gray-500 dark:text-zinc-400 text-center py-3 px-3"
                                     >
                                         {{ $t("files.no_contacts_found") }}
                                     </div>
@@ -269,17 +258,19 @@
                                         v-for="c in contacts"
                                         :key="c.id || c.remote_identity_hash"
                                         type="button"
-                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition flex items-center gap-2 border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition border-b border-gray-100 dark:border-zinc-700/50 last:border-0"
                                         @mousedown.prevent="selectFetchContact(c)"
                                     >
-                                        <MaterialDesignIcon icon-name="account-multiple" class="w-4 h-4 shrink-0 text-gray-400 dark:text-zinc-500" />
-                                        <div class="min-w-0 flex-1">
-                                            <div class="font-medium text-gray-800 dark:text-zinc-200 truncate">
-                                                {{ c.name || $t("files.unnamed_contact") }}
-                                            </div>
-                                            <div class="text-xs text-gray-500 dark:text-zinc-400 font-mono truncate">
-                                                {{ c.remote_identity_hash || c.lxmf_address || "" }}
-                                            </div>
+                                        <div class="font-medium text-gray-800 dark:text-zinc-200 truncate mb-1">
+                                            {{ c.name || $t("files.unnamed_contact") }}
+                                        </div>
+                                        <div v-if="c.remote_identity_hash" class="flex items-center gap-1 text-xs">
+                                            <span class="shrink-0 px-1 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-mono font-semibold">RNS</span>
+                                            <span class="text-gray-500 dark:text-zinc-400 font-mono truncate">{{ c.remote_identity_hash }}</span>
+                                        </div>
+                                        <div v-if="c.lxmf_address && c.lxmf_address !== c.remote_identity_hash" class="flex items-center gap-1 text-xs mt-0.5">
+                                            <span class="shrink-0 px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-mono font-semibold">LXMF</span>
+                                            <span class="text-gray-500 dark:text-zinc-400 font-mono truncate">{{ c.lxmf_address }}</span>
                                         </div>
                                     </button>
                                 </div>
@@ -668,197 +659,6 @@
                         </div>
                     </div>
 
-                    <div v-if="activeTab === 'connect'" class="space-y-4">
-                        <div
-                            class="p-4 rounded-lg bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20"
-                        >
-                            <div class="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-2">
-                                <MaterialDesignIcon icon-name="lan-connect" class="w-4 h-4 inline mr-1" />
-                                {{ $t("files.direct_connect") }}
-                            </div>
-                            <p class="text-xs text-green-800/80 dark:text-green-300/80 leading-relaxed">
-                                {{ $t("files.direct_connect_info") }}
-                            </p>
-                        </div>
-
-                        <div class="border-b border-gray-200 dark:border-zinc-700">
-                            <div class="flex gap-2">
-                                <button
-                                    type="button"
-                                    :class="connectTab === 'client'
-                                        ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400'
-                                        : 'text-gray-600 dark:text-gray-400'"
-                                    class="shrink-0 px-3 sm:px-4 py-2 text-sm font-semibold transition"
-                                    @click="connectTab = 'client'"
-                                >
-                                    <MaterialDesignIcon icon-name="lan-connect" class="w-4 h-4 inline mr-1" />
-                                    {{ $t("files.connect_to_peer") }}
-                                </button>
-                                <button
-                                    type="button"
-                                    :class="connectTab === 'server'
-                                        ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400'
-                                        : 'text-gray-600 dark:text-gray-400'"
-                                    class="shrink-0 px-3 sm:px-4 py-2 text-sm font-semibold transition"
-                                    @click="connectTab = 'server'"
-                                >
-                                    <MaterialDesignIcon icon-name="lan" class="w-4 h-4 inline mr-1" />
-                                    {{ $t("files.host_server") }}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div v-if="connectTab === 'client'" class="space-y-4">
-                            <div class="grid lg:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="glass-label">{{ $t("files.peer_ip") }}</label>
-                                    <input
-                                        v-model="connectPeerHost"
-                                        type="text"
-                                        placeholder="e.g. 203.0.113.42 or peer.example.com"
-                                        class="input-field font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="glass-label">{{ $t("files.peer_port") }}</label>
-                                    <input
-                                        v-model="connectPeerPort"
-                                        type="number"
-                                        placeholder="4242"
-                                        class="input-field"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label class="glass-label">{{ $t("files.connection_name") }}</label>
-                                <input
-                                    v-model="connectPeerName"
-                                    type="text"
-                                    :placeholder="$t('files.connection_name_placeholder')"
-                                    class="input-field"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                class="primary-chip px-4 py-2 text-sm"
-                                :disabled="connectInProgress"
-                                @click="quickConnect"
-                            >
-                                <MaterialDesignIcon icon-name="lan-connect" class="w-4 h-4" />
-                                {{ $t("files.connect") }}
-                            </button>
-                            <div
-                                v-if="connectResult"
-                                class="p-3 rounded-lg"
-                                :class="connectResult.success
-                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'"
-                            >
-                                <div class="text-sm">{{ connectResult.message }}</div>
-                                <div v-if="connectResult.success" class="text-xs mt-1 text-gray-600 dark:text-zinc-400">
-                                    {{ $t("files.restart_hint") }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="connectTab === 'server'" class="space-y-4">
-                            <div class="grid lg:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="glass-label">{{ $t("files.listen_ip") }}</label>
-                                    <input
-                                        v-model="serverListenIp"
-                                        type="text"
-                                        placeholder="0.0.0.0"
-                                        class="input-field font-mono"
-                                    />
-                                    <div class="text-xs text-gray-500 dark:text-zinc-500 mt-1">
-                                        {{ $t("files.listen_ip_info") }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="glass-label">{{ $t("files.listen_port") }}</label>
-                                    <input
-                                        v-model="serverListenPort"
-                                        type="number"
-                                        placeholder="4242"
-                                        class="input-field"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label class="glass-label">{{ $t("files.server_name") }}</label>
-                                <input
-                                    v-model="serverName"
-                                    type="text"
-                                    :placeholder="$t('files.server_name_placeholder')"
-                                    class="input-field"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                class="primary-chip px-4 py-2 text-sm"
-                                :disabled="serverInProgress"
-                                @click="startServer"
-                            >
-                                <MaterialDesignIcon icon-name="lan" class="w-4 h-4" />
-                                {{ $t("files.start_server") }}
-                            </button>
-                            <div
-                                v-if="serverResult"
-                                class="p-3 rounded-lg"
-                                :class="serverResult.success
-                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'"
-                            >
-                                <div class="text-sm">{{ serverResult.message }}</div>
-                                <div v-if="serverResult.success" class="text-xs mt-1 text-gray-600 dark:text-zinc-400">
-                                    {{ $t("files.restart_hint") }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="text-sm font-semibold text-gray-700 dark:text-zinc-300">
-                                <MaterialDesignIcon icon-name="format-list-bulleted" class="w-4 h-4 inline mr-1" />
-                                {{ $t("files.active_connections") }}
-                            </div>
-                            <div v-if="tcpInterfaces.length === 0" class="text-sm text-gray-500 dark:text-zinc-400 text-center py-4">
-                                {{ $t("files.no_connections") }}
-                            </div>
-                            <div
-                                v-for="iface in tcpInterfaces"
-                                :key="iface.name"
-                                class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700"
-                            >
-                                <MaterialDesignIcon
-                                    :icon-name="iface.type === 'TCPServerInterface' ? 'lan' : 'lan-connect'"
-                                    class="w-5 h-5 shrink-0 text-gray-500 dark:text-zinc-400"
-                                />
-                                <div class="min-w-0 flex-1">
-                                    <div class="text-sm font-medium text-gray-800 dark:text-zinc-200 truncate">
-                                        {{ iface.name }}
-                                    </div>
-                                    <div class="text-xs text-gray-500 dark:text-zinc-500">
-                                        <template v-if="iface.type === 'TCPClientInterface'">
-                                            {{ $t("files.connects_to") }} {{ iface.target_host }}:{{ iface.target_port }}
-                                        </template>
-                                        <template v-else>
-                                            {{ $t("files.listening_on") }} {{ iface.listen_ip }}:{{ iface.listen_port }}
-                                        </template>
-                                    </div>
-                                </div>
-                                <span
-                                    class="text-xs px-2 py-0.5 rounded-full font-medium"
-                                    :class="iface.interface_enabled !== 'false'
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                        : 'bg-gray-100 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400'"
-                                >
-                                    {{ iface.interface_enabled !== 'false' ? $t('files.enabled') : $t('files.disabled') }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div v-if="activeTab === 'history'" class="space-y-4">
                         <div class="flex items-center justify-between mb-3">
                             <div class="text-sm font-semibold text-gray-700 dark:text-zinc-300">
@@ -980,18 +780,7 @@ export default {
 
             transferHistory: [],
 
-            connectTab: "client",
-            connectPeerHost: "",
-            connectPeerPort: 4242,
-            connectPeerName: "",
-            connectInProgress: false,
-            connectResult: null,
-            serverListenIp: "0.0.0.0",
-            serverListenPort: 4242,
-            serverName: "",
-            serverInProgress: false,
-            serverResult: null,
-            tcpInterfaces: [],
+
 
             contacts: [],
             showSendContactPicker: false,
@@ -1312,68 +1101,12 @@ export default {
             }
         },
         selectSendContact(c) {
-            const hash = c.remote_identity_hash || c.lxmf_address || "";
-            if (hash) this.sendDestinationHash = hash;
+            if (c.remote_identity_hash) this.sendDestinationHash = c.remote_identity_hash;
             this.showSendContactPicker = false;
         },
         selectFetchContact(c) {
-            const hash = c.remote_identity_hash || c.lxmf_address || "";
-            if (hash) this.fetchDestinationHash = hash;
+            if (c.remote_identity_hash) this.fetchDestinationHash = c.remote_identity_hash;
             this.showFetchContactPicker = false;
-        },
-        async refreshInterfaces() {
-            try {
-                const response = await window.api.get("/api/v1/rns-fileshare/interfaces");
-                this.tcpInterfaces = response.data.interfaces || [];
-            } catch {}
-        },
-        async quickConnect() {
-            if (!this.connectPeerHost) {
-                DialogUtils.alert(this.$t("files.provide_peer_host"));
-                return;
-            }
-            this.connectInProgress = true;
-            this.connectResult = null;
-            try {
-                const response = await window.api.post("/api/v1/rns-fileshare/quick-connect", {
-                    host: this.connectPeerHost,
-                    port: this.connectPeerPort,
-                    name: this.connectPeerName || undefined,
-                });
-                this.connectResult = { success: true, message: response.data.message };
-                this.refreshInterfaces();
-            } catch (e) {
-                this.connectResult = {
-                    success: false,
-                    message: e.response?.data?.message || this.$t("files.failed_to_connect"),
-                };
-            } finally {
-                this.connectInProgress = false;
-            }
-        },
-        async startServer() {
-            if (!this.serverListenIp) {
-                DialogUtils.alert(this.$t("files.provide_listen_ip"));
-                return;
-            }
-            this.serverInProgress = true;
-            this.serverResult = null;
-            try {
-                const response = await window.api.post("/api/v1/rns-fileshare/start-server", {
-                    listen_ip: this.serverListenIp,
-                    listen_port: this.serverListenPort,
-                    name: this.serverName || undefined,
-                });
-                this.serverResult = { success: true, message: response.data.message };
-                this.refreshInterfaces();
-            } catch (e) {
-                this.serverResult = {
-                    success: false,
-                    message: e.response?.data?.message || this.$t("files.failed_to_start_server"),
-                };
-            } finally {
-                this.serverInProgress = false;
-            }
         },
         async openPathInOs(filePath) {
             if (!filePath) return;

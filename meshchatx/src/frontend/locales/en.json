@@ -1720,6 +1720,19 @@
         "export_mu": "Export .mu",
         "export_selected_mu": "Export .mu ({count})"
     },
+    "announces": {
+        "title": "Announces",
+        "description": "Browse network announces to discover peers and services.",
+        "search_placeholder": "Search announces...",
+        "all_aspects": "All aspects",
+        "hops": "hops",
+        "anonymous": "Anonymous",
+        "no_announces": "No announces found",
+        "load_more": "Load more",
+        "rns_hash_copied": "Identity hash copied to clipboard",
+        "dest_hash_copied": "Destination hash copied to clipboard",
+        "lxmf_hash_copied": "LXMF destination hash copied to clipboard"
+    },
     "files": {
         "title": "File Window",
         "description": "Share and receive large files over the Reticulum network using direct RNS transfers (no LXMF).",

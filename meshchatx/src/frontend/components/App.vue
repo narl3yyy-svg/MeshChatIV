@@ -332,6 +332,19 @@
                                         </SidebarLink>
                                     </li>
 
+                                    <!-- announces -->
+                                    <li>
+                                        <SidebarLink :to="{ name: 'announces' }" :is-collapsed="isSidebarCollapsed">
+                                            <template #icon>
+                                                <MaterialDesignIcon
+                                                    icon-name="bullhorn"
+                                                    class="w-6 h-6 text-gray-700 dark:text-gray-200"
+                                                />
+                                            </template>
+                                            <template #text>{{ $t("announces.title") }}</template>
+                                        </SidebarLink>
+                                    </li>
+
                                     <!-- file window -->
                                     <li>
                                         <SidebarLink :to="{ name: 'files' }" :is-collapsed="isSidebarCollapsed">
