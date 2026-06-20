@@ -551,7 +551,10 @@ export default {
 
         // compose message if a destination hash was provided on page load
         if (this.destinationHash) {
-            this.onComposeNewMessage(this.destinationHash);
+            // wait for getConversations to complete so is_contact is accurate
+            this.getConversations().then(() => {
+                this.onComposeNewMessage(this.destinationHash);
+            });
         }
     },
     methods: {
@@ -1148,6 +1151,8 @@ export default {
                 destination_hash: peer.destination_hash,
                 display_name: peer.display_name ?? null,
                 custom_display_name: peer.custom_display_name ?? null,
+                is_contact: peer.is_contact ?? false,
+                contact_image: peer.contact_image ?? null,
             };
         },
         restorePanes(routeHash) {

@@ -184,8 +184,9 @@
 
 <script>
 import MaterialDesignIcon from "../MaterialDesignIcon.vue";
-import ToastUtils from "../../js/ToastUtils";
 
+import GlobalEmitter from "../../js/GlobalEmitter";
+import ToastUtils from "../../js/ToastUtils";
 const PAGE_SIZE = 30;
 
 export default {
@@ -279,6 +280,11 @@ export default {
             }
             try {
                 await window.api.post("/api/v1/telephone/contacts", payload);
+                GlobalEmitter.emit("contact-updated", {
+                    remote_identity_hash: a.identity_hash,
+                    lxmf_address: a.lxmf_destination_hash,
+                    destination_hash: a.destination_hash,
+                });
                 ToastUtils.success(this.$t("announces.contact_added", { name }));
             } catch (e) {
                 ToastUtils.error(e.response?.data?.message || this.$t("announces.contact_add_failed"));

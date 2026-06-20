@@ -3039,7 +3039,11 @@ export default {
             );
         },
         onContactUpdatedForBanner(data) {
-            if (this.selectedPeer?.destination_hash === data?.remote_identity_hash) {
+            const match =
+                this.selectedPeer?.destination_hash === data?.remote_identity_hash ||
+                this.selectedPeer?.destination_hash === data?.lxmf_address ||
+                this.selectedPeer?.destination_hash === data?.destination_hash;
+            if (match) {
                 this.selectedPeer.is_contact = true;
                 this.isStrangerPeer = false;
                 this.strangerBannerDismissed = true;
@@ -3060,7 +3064,7 @@ export default {
                 );
                 this.isStrangerPeer = !response.data.is_contact;
             } catch {
-                this.isStrangerPeer = !this.selectedPeer.is_contact && !this.selectedPeer.contact_image;
+                this.isStrangerPeer = false;
             }
         },
         async addStrangerAsContact() {
@@ -3068,7 +3072,7 @@ export default {
             try {
                 const displayName =
                     this.selectedPeer.custom_display_name ?? this.selectedPeer.display_name ?? "Unknown";
-                await fetch(`/api/v1/telephone/contacts`, {
+                const response = await fetch(`/api/v1/telephone/contacts`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -3076,11 +3080,16 @@ export default {
                         name: displayName,
                     }),
                 });
+                if (!response.ok) {
+                    console.error("Failed to add contact:", response.status, await response.text());
+                    return;
+                }
                 this.selectedPeer.is_contact = true;
                 this.isStrangerPeer = false;
                 this.strangerBannerDismissed = true;
                 GlobalEmitter.emit("contact-updated", {
                     remote_identity_hash: this.selectedPeer.destination_hash,
+                    lxmf_address: this.selectedPeer.destination_hash,
                 });
                 this.$emit("reload-conversations");
             } catch (e) {
