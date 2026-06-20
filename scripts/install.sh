@@ -171,6 +171,12 @@ install_ubuntu_deps() {
         info "Installing uv (Python package manager)..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+        # Symlink uv to /usr/local/bin so it persists in the user's PATH
+        if [ -f "$HOME/.cargo/bin/uv" ]; then
+            sudo ln -sf "$HOME/.cargo/bin/uv" /usr/local/bin/uv
+        elif [ -f "$HOME/.local/bin/uv" ]; then
+            sudo ln -sf "$HOME/.local/bin/uv" /usr/local/bin/uv
+        fi
     fi
 
     ok "Ubuntu dependencies installed."
@@ -221,6 +227,12 @@ install_arch_deps() {
         info "Installing uv (Python package manager)..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+        # Symlink uv to /usr/local/bin so it persists in the user's PATH
+        if [ -f "$HOME/.cargo/bin/uv" ]; then
+            sudo ln -sf "$HOME/.cargo/bin/uv" /usr/local/bin/uv
+        elif [ -f "$HOME/.local/bin/uv" ]; then
+            sudo ln -sf "$HOME/.local/bin/uv" /usr/local/bin/uv
+        fi
     fi
 
     ok "Arch dependencies installed."
