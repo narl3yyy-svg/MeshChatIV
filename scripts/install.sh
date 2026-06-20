@@ -22,7 +22,6 @@ detect_distro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         DISTRO="$ID"
-        DISTRO_LIKE="$ID_LIKE"
     elif command -v lsb_release &>/dev/null; then
         DISTRO=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
     else
